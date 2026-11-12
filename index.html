@@ -307,7 +307,6 @@ function setupLocationCascades(prefix, flightId) {
 
   searchInput.addEventListener('input', () => {
     populateCountrySelect(countrySelect, searchInput.value);
-    // trigger city reload for the auto-selected / cleared country
     countrySelect.dispatchEvent(new Event('change'));
   });
 
