@@ -66,11 +66,13 @@
       display: block; font-size: 0.75rem; font-weight: 500;
       margin-bottom: 2px; color: var(--muted);
     }
-    select, input[type="date"], input[type="time"], input[type="text"] {
+    select, input[type="date"], input[type="time"], input[type="text"], input[type="number"], textarea {
       width: 100%; padding: 6px 8px; border: 1px solid var(--border);
       border-radius: 6px; font-size: 0.875rem; background: #fff;
+      font-family: inherit;
     }
-    select:focus, input:focus {
+    textarea { resize: vertical; min-height: 4.5em; }
+    select:focus, input:focus, textarea:focus {
       outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent;
     }
     .country-search-wrap input { margin-bottom: 4px; }
@@ -97,8 +99,22 @@
 <body>
   <div class="container">
     <h1>Stellenbosch University - 209 Travel Group - Request Form</h1>
-    <p class="subtitle">Select origin &amp; destination, dates and times. Add more flights if needed, then submit to copy the request.</p>
+    <p class="subtitle">Select origin &amp; destination, dates and times. Add services and comments per flight, then submit to copy the request.</p>
     <div class="load-status" id="loadStatus">Loading airports…</div>
+
+    <div class="flight-card" id="tripDefaults">
+      <div class="section-title">Travellers (optional for quote)</div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="pax_count">Number of passengers</label>
+          <input type="number" id="pax_count" min="1" value="1">
+        </div>
+        <div class="field">
+          <label for="contact_email">Contact email</label>
+          <input type="text" id="contact_email" placeholder="name@sun.ac.za" autocomplete="email">
+        </div>
+      </div>
+    </div>
 
     <div id="flights"></div>
 
@@ -111,9 +127,9 @@
   </div>
 
   <script>
-    // ========== CONFIG: your GitLab Pages CSV URL ==========
+    // ========== CONFIG ==========
     const CSV_URL = 'airports_simple.csv';
-    // =======================================================
+    // ============================
 
     let airportsData = [];
     let allCountries = [];
@@ -213,30 +229,17 @@
     }
 
     function createFlightCard(id) {
-  const card = document.createElement('div');
-  card.className = 'flight-card';
-  card.dataset.flightId = id;
-  card.innerHTML = `
-    <div class="flight-header">
-      <h2>Flight ${id}</h2>
-      ${id > 1 ? `<button type="button" class="remove-btn" data-remove="${id}">Remove</button>` : ''}
-    </div>
-    ${createLocationBlock('origin', id)}
-    ${createLocationBlock('destination', id)}
+      const card = document.createElement('div');
+      card.className = 'flight-card';
+      card.dataset.flightId = id;
+      card.innerHTML = `
+        <div class="flight-header">
+          <h2>Flight ${id}</h2>
+          ${id > 1 ? `<button type="button" class="remove-btn" data-remove="${id}">Remove</button>` : ''}
+        </div>
+        ${createLocationBlock('origin', id)}
+        ${createLocationBlock('destination', id)}
 
-    <!-- NEW: Cabin class -->
-    <div class="section">
-      <div class="section-title">Cabin</div>
-      <div class="field" style="max-width: 220px;">
-        <label>Class</label>
-        <select id="cabin_${id}">
-          <option value="Economy">Economy</option>
-          <option value="Premium Economy">Premium Economy</option>
-          <option value="Business">Business</option>
-          <option value="First Class">First Class</option>
-        </select>
-      </div>
-    </div>
         <div class="section">
           <div class="grid-2">
             <div>
@@ -247,7 +250,7 @@
                   <input type="date" id="dep_date_${id}">
                 </div>
                 <div class="field">
-                  <label>Time slow</label>
+                  <label>Time</label>
                   <input type="time" id="dep_time_${id}">
                 </div>
               </div>
@@ -266,89 +269,149 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Cabin &amp; services</div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Cabin class</label>
+              <select id="cabin_${id}">
+                <option value="Economy">Economy</option>
+                <option value="Premium Economy">Premium Economy</option>
+                <option value="Business">Business</option>
+                <option value="First Class">First Class</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Meal preference</label>
+              <select id="meal_${id}">
+                <option value="Standard">Standard (no special meal)</option>
+                <option value="Vegetarian">Vegetarian</option>
+                <option value="Vegan">Vegan</option>
+                <option value="Hindu">Hindu</option>
+                <option value="Kosher">Kosher</option>
+                <option value="Muslim">Muslim</option>
+                <option value="Gluten-free">Gluten-free</option>
+                <option value="Diabetic">Diabetic</option>
+                <option value="Other">Other (see comments)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Special assistance</label>
+              <select id="assistance_${id}">
+                <option value="None">None</option>
+                <option value="Wheelchair (to aircraft)">Wheelchair (to aircraft)</option>
+                <option value="Wheelchair (up steps)">Wheelchair (up steps)</option>
+                <option value="Wheelchair (to seat)">Wheelchair (to seat)</option>
+                <option value="Visually impaired">Visually impaired / blind</option>
+                <option value="Hearing impaired">Hearing impaired / deaf</option>
+                <option value="Other">Other (see comments)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Special luggage</label>
+              <select id="luggage_${id}">
+                <option value="None">None / standard only</option>
+                <option value="Excess baggage">Excess baggage</option>
+                <option value="Sports equipment">Sports equipment</option>
+                <option value="Musical instrument">Musical instrument</option>
+                <option value="Mobility device">Mobility device / wheelchair as bag</option>
+                <option value="Other">Other (see comments)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Additional comments</div>
+          <div class="field">
+            <label for="comments_${id}">Notes for this flight (assistance detail, bag size/weight, airline preference, etc.)</label>
+            <textarea id="comments_${id}" rows="3" placeholder="e.g. folding wheelchair, 1× golf bag under 23 kg, prefer direct if possible…"></textarea>
+          </div>
         </div>`;
-      // fix accidental label typo from edit
-      card.querySelector(`#dep_time_${id}`).previousElementSibling.textContent = 'Time';
       return card;
     }
 
-function populateCountrySelect(selectEl, filterText = '') {
-  const filter = filterText.trim().toLowerCase();
-  const filtered = filter
-    ? allCountries.filter(c => c.toLowerCase().includes(filter))
-    : allCountries;
+    function populateCountrySelect(selectEl, filterText = '') {
+      const filter = filterText.trim().toLowerCase();
+      const filtered = filter
+        ? allCountries.filter(c => c.toLowerCase().includes(filter))
+        : allCountries;
 
-  const previous = selectEl.value;
-  selectEl.innerHTML = '<option value="">— Country —</option>';
-  filtered.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    selectEl.appendChild(opt);
-  });
-
-  if (filtered.includes(previous)) {
-    selectEl.value = previous;
-  } else if (filter && filtered.length > 0) {
-    selectEl.value = filtered[0]; // e.g. "sou" → South Africa
-  } else {
-    selectEl.value = '';
-  }
-}
-
-function setupLocationCascades(prefix, flightId) {
-  const id = `${prefix}_${flightId}`;
-  const searchInput = document.getElementById(`${id}_country_search`);
-  const countrySelect = document.getElementById(`${id}_country`);
-  const citySelect = document.getElementById(`${id}_city`);
-  const airportSelect = document.getElementById(`${id}_airport`);
-
-  populateCountrySelect(countrySelect);
-
-  searchInput.addEventListener('input', () => {
-    populateCountrySelect(countrySelect, searchInput.value);
-    countrySelect.dispatchEvent(new Event('change'));
-  });
-
-  countrySelect.addEventListener('change', () => {
-    const country = countrySelect.value;
-    citySelect.innerHTML = '<option value="">— City —</option>';
-    airportSelect.innerHTML = '<option value="">— Airport —</option>';
-    airportSelect.disabled = true;
-
-    if (country) {
-      getCitiesForCountry(country).forEach(city => {
+      const previous = selectEl.value;
+      selectEl.innerHTML = '<option value="">— Country —</option>';
+      filtered.forEach(c => {
         const opt = document.createElement('option');
-        opt.value = city;
-        opt.textContent = city;
-        citySelect.appendChild(opt);
+        opt.value = c;
+        opt.textContent = c;
+        selectEl.appendChild(opt);
       });
-      citySelect.disabled = false;
-    } else {
-      citySelect.disabled = true;
+
+      if (filtered.includes(previous)) {
+        selectEl.value = previous;
+      } else if (filter && filtered.length > 0) {
+        // jump to first match (e.g. "sou" → South Africa); focus stays in search box
+        selectEl.value = filtered[0];
+      } else {
+        selectEl.value = '';
+      }
     }
-  });
 
-  citySelect.addEventListener('change', () => {
-    const country = countrySelect.value;
-    const city = citySelect.value;
-    airportSelect.innerHTML = '<option value="">— Airport —</option>';
+    function setupLocationCascades(prefix, flightId) {
+      const id = `${prefix}_${flightId}`;
+      const searchInput = document.getElementById(`${id}_country_search`);
+      const countrySelect = document.getElementById(`${id}_country`);
+      const citySelect = document.getElementById(`${id}_city`);
+      const airportSelect = document.getElementById(`${id}_airport`);
 
-    if (country && city) {
-      const airports = getAirportsForCity(country, city);
-      airports.forEach(ap => {
-        const opt = document.createElement('option');
-        opt.value = ap;
-        opt.textContent = ap;
-        airportSelect.appendChild(opt);
+      populateCountrySelect(countrySelect);
+
+      searchInput.addEventListener('input', () => {
+        populateCountrySelect(countrySelect, searchInput.value);
+        // reload cities for auto-selected / cleared country — do not open the select
+        countrySelect.dispatchEvent(new Event('change'));
       });
-      airportSelect.disabled = false;
-      if (airports.length === 1) airportSelect.value = airports[0];
-    } else {
-      airportSelect.disabled = true;
+
+      countrySelect.addEventListener('change', () => {
+        const country = countrySelect.value;
+        citySelect.innerHTML = '<option value="">— City —</option>';
+        airportSelect.innerHTML = '<option value="">— Airport —</option>';
+        airportSelect.disabled = true;
+
+        if (country) {
+          getCitiesForCountry(country).forEach(city => {
+            const opt = document.createElement('option');
+            opt.value = city;
+            opt.textContent = city;
+            citySelect.appendChild(opt);
+          });
+          citySelect.disabled = false;
+        } else {
+          citySelect.disabled = true;
+        }
+      });
+
+      citySelect.addEventListener('change', () => {
+        const country = countrySelect.value;
+        const city = citySelect.value;
+        airportSelect.innerHTML = '<option value="">— Airport —</option>';
+
+        if (country && city) {
+          const airports = getAirportsForCity(country, city);
+          airports.forEach(ap => {
+            const opt = document.createElement('option');
+            opt.value = ap;
+            opt.textContent = ap;
+            airportSelect.appendChild(opt);
+          });
+          airportSelect.disabled = false;
+          if (airports.length === 1) airportSelect.value = airports[0];
+        } else {
+          airportSelect.disabled = true;
+        }
+      });
     }
-  });
-}
 
     function addFlight() {
       flightCount += 1;
@@ -366,7 +429,7 @@ function setupLocationCascades(prefix, flightId) {
     }
 
     function renumberFlights() {
-      document.querySelectorAll('.flight-card').forEach((card, index) => {
+      document.querySelectorAll('#flights .flight-card').forEach((card, index) => {
         card.querySelector('h2').textContent = `Flight ${index + 1}`;
       });
     }
@@ -379,29 +442,40 @@ function setupLocationCascades(prefix, flightId) {
       return `${airport}, ${city}, ${country}`;
     }
 
-function buildClipboardText() {
-  const cards = Array.from(document.querySelectorAll('.flight-card'));
-  const lines = [];
-  cards.forEach((card, index) => {
-    const id = card.dataset.flightId;
-    const origin = formatLocation('origin', id);
-    const dest   = formatLocation('destination', id);
-    if (!origin || !dest) return;
+    function buildClipboardText() {
+      const cards = Array.from(document.querySelectorAll('#flights .flight-card'));
+      const lines = [];
+      cards.forEach((card, index) => {
+        const id = card.dataset.flightId;
+        const origin = formatLocation('origin', id);
+        const dest   = formatLocation('destination', id);
+        if (!origin || !dest) return;
 
-    const depDate = document.getElementById(`dep_date_${id}`)?.value || '—';
-    const depTime = document.getElementById(`dep_time_${id}`)?.value || '—';
-    const arrDate = document.getElementById(`arr_date_${id}`)?.value || '—';
-    const arrTime = document.getElementById(`arr_time_${id}`)?.value || '—';
-    const cabin  = document.getElementById(`cabin_${id}`)?.value || 'Economy';
+        const depDate  = document.getElementById(`dep_date_${id}`)?.value || '—';
+        const depTime  = document.getElementById(`dep_time_${id}`)?.value || '—';
+        const arrDate  = document.getElementById(`arr_date_${id}`)?.value || '—';
+        const arrTime  = document.getElementById(`arr_time_${id}`)?.value || '—';
+        const cabin    = document.getElementById(`cabin_${id}`)?.value || 'Economy';
+        const meal     = document.getElementById(`meal_${id}`)?.value || 'Standard';
+        const assist   = document.getElementById(`assistance_${id}`)?.value || 'None';
+        const luggage  = document.getElementById(`luggage_${id}`)?.value || 'None';
+        const comments = (document.getElementById(`comments_${id}`)?.value || '').trim();
 
-    lines.push(
-      `${index + 1}. On ${depDate}, ${depTime} from ${origin} to ${dest} ` +
-      `to arrive before ${arrDate}, ${arrTime} — ${cabin}`
-    );
-  });
-  if (!lines.length) return null;
-  return 'Please quote for the following flights:\n' + lines.join('\n');
-}
+        let line =
+          `${index + 1}. On ${depDate}, ${depTime} from ${origin} to ${dest} ` +
+          `to arrive before ${arrDate}, ${arrTime} — ${cabin}`;
+        line += `\n   Meal: ${meal} | Assistance: ${assist} | Luggage: ${luggage}`;
+        if (comments) line += `\n   Comments: ${comments}`;
+        lines.push(line);
+      });
+      if (!lines.length) return null;
+
+      const pax = document.getElementById('pax_count')?.value || '1';
+      const email = (document.getElementById('contact_email')?.value || '').trim();
+      let header = `Please quote for the following flights (${pax} passenger(s)):\n`;
+      if (email) header += `Contact: ${email}\n`;
+      return header + lines.join('\n');
+    }
 
     function scrollToStatus() {
       const status = document.getElementById('status');
@@ -458,7 +532,6 @@ function buildClipboardText() {
       scrollToStatus();
     });
 
-    // Auto-load from GitLab Pages
     loadCSV();
   </script>
 </body>
