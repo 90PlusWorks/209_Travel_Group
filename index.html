@@ -213,16 +213,30 @@
     }
 
     function createFlightCard(id) {
-      const card = document.createElement('div');
-      card.className = 'flight-card';
-      card.dataset.flightId = id;
-      card.innerHTML = `
-        <div class="flight-header">
-          <h2>Flight ${id}</h2>
-          ${id > 1 ? `<button type="button" class="remove-btn" data-remove="${id}">Remove</button>` : ''}
-        </div>
-        ${createLocationBlock('origin', id)}
-        ${createLocationBlock('destination', id)}
+  const card = document.createElement('div');
+  card.className = 'flight-card';
+  card.dataset.flightId = id;
+  card.innerHTML = `
+    <div class="flight-header">
+      <h2>Flight ${id}</h2>
+      ${id > 1 ? `<button type="button" class="remove-btn" data-remove="${id}">Remove</button>` : ''}
+    </div>
+    ${createLocationBlock('origin', id)}
+    ${createLocationBlock('destination', id)}
+
+    <!-- NEW: Cabin class -->
+    <div class="section">
+      <div class="section-title">Cabin</div>
+      <div class="field" style="max-width: 220px;">
+        <label>Class</label>
+        <select id="cabin_${id}">
+          <option value="Economy">Economy</option>
+          <option value="Premium Economy">Premium Economy</option>
+          <option value="Business">Business</option>
+          <option value="First Class">First Class</option>
+        </select>
+      </div>
+    </div>
         <div class="section">
           <div class="grid-2">
             <div>
@@ -337,25 +351,29 @@ function setupLocationCascades(prefix, flightId) {
       return `${airport}, ${city}, ${country}`;
     }
 
-    function buildClipboardText() {
-      const cards = Array.from(document.querySelectorAll('.flight-card'));
-      const lines = [];
-      cards.forEach((card, index) => {
-        const id = card.dataset.flightId;
-        const origin = formatLocation('origin', id);
-        const dest   = formatLocation('destination', id);
-        if (!origin || !dest) return;
-        const depDate = document.getElementById(`dep_date_${id}`)?.value || '—';
-        const depTime = document.getElementById(`dep_time_${id}`)?.value || '—';
-        const arrDate = document.getElementById(`arr_date_${id}`)?.value || '—';
-        const arrTime = document.getElementById(`arr_time_${id}`)?.value || '—';
-        lines.push(
-          `${index + 1}. On ${depDate}, ${depTime} from ${origin} to ${dest} to arrive before ${arrDate}, ${arrTime}`
-        );
-      });
-      if (!lines.length) return null;
-      return 'Please quote for the following flights:\n' + lines.join('\n');
-    }
+function buildClipboardText() {
+  const cards = Array.from(document.querySelectorAll('.flight-card'));
+  const lines = [];
+  cards.forEach((card, index) => {
+    const id = card.dataset.flightId;
+    const origin = formatLocation('origin', id);
+    const dest   = formatLocation('destination', id);
+    if (!origin || !dest) return;
+
+    const depDate = document.getElementById(`dep_date_${id}`)?.value || '—';
+    const depTime = document.getElementById(`dep_time_${id}`)?.value || '—';
+    const arrDate = document.getElementById(`arr_date_${id}`)?.value || '—';
+    const arrTime = document.getElementById(`arr_time_${id}`)?.value || '—';
+    const cabin  = document.getElementById(`cabin_${id}`)?.value || 'Economy';
+
+    lines.push(
+      `${index + 1}. On ${depDate}, ${depTime} from ${origin} to ${dest} ` +
+      `to arrive before ${arrDate}, ${arrTime} — ${cabin}`
+    );
+  });
+  if (!lines.length) return null;
+  return 'Please quote for the following flights:\n' + lines.join('\n');
+}
 
     function scrollToStatus() {
       const status = document.getElementById('status');
